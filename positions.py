@@ -37,7 +37,10 @@ while True:
 
     livedata = metlink.get_vehicle_positions()
 
+    mqtt_payload = {}
+
     for k,v in Routes.items():
+        bus_list = []
         active_buses = [buses for buses in livedata if buses['route_id'] == k and buses['latitude'] < max_lat and buses['direction_id'] == v['direction_id']]
         for bus in active_buses:
             print(f"{v['output_route']}: {bus} {v['route']}")
@@ -52,13 +55,15 @@ while True:
                         highbound = max(segment["latitude"])
                         div = segment["leds"]
                         led = int((bus["latitude"] - min(segment["latitude"]))/((highbound - lowbound)/div))
-                        outobj = {v['output_route']:[led]}
-                        print(str(outobj))
-                        mqttc.publish('bus/positions',str(outobj))
+                        bus_list.append(led)
                 if "longitude" in segment.keys():
                    if (
                         bus["longitude"] >= min(segment["longitude"])
                         and bus["longitude"] <= max(segment["longitude"])
                     ):
                        print(segment)
+        mqtt_payload[v['output_route']] = bus_list
+
+    print(f"{mqtt_payload=}")
+    mqttc.publish('bus/positions',str(mqtt_payload))
     sleep(10)                       
