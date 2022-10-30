@@ -23,7 +23,7 @@ Rintoul = {"latitude":[-41.31962957,-41.31706437],"leds":5}
 South_Coast = {"longitude": [174.7845709,174.7706202],"leds":5}
 
 Routes = { 10: {"route":[Adelaide_South,Luxford,Rintoul],"direction_id":0,"output_route":"1"},
-    320: {"route":[South_Coast,Adelaide_South,Adelaide_North],"direction_id":0,"output_route":"32x"},
+    320: {"route":[South_Coast,Adelaide_South,Adelaide_North],"direction_id":1,"output_route":"32x"},
         290: {"route":[Russell],"direction_id":1,"output_route":"29"}
            }
 
@@ -31,8 +31,8 @@ Routes = { 10: {"route":[Adelaide_South,Luxford,Rintoul],"direction_id":0,"outpu
 max_lat = max([max(track.get('latitude',[-180])) for k,v in Routes.items() for track in v["route"]])
 print(f"{max_lat=}")
 # for Route 1, direction_id = 1 is Southbound, 0 is Northbound
-# for Route 29, direction_id = 2 is Brooklyn - Berhampore - Newtown - Wellington
-# for Route 32x, we'll assume it's direction_id = 0 Northbound
+# for Route 29, direction_id = 1 is Brooklyn - Berhampore - Newtown - Wellington
+# for Route 32x, confirmed, direction_id = 1 is Northbound
 while True:
 
     livedata = metlink.get_vehicle_positions()
