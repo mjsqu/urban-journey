@@ -33,6 +33,14 @@ print(f"{max_lat=}")
 # for Route 1, direction_id = 1 is Southbound, 0 is Northbound
 # for Route 29, direction_id = 1 is Brooklyn - Berhampore - Newtown - Wellington
 # for Route 32x, confirmed, direction_id = 1 is Northbound
+
+def get_display_led(segment,bus,measure):
+	lowbound = min(segment[measure])
+	highbound = max(segment[measure])
+	div = segment["leds"]
+	led = int( (bus[measure] - lowbound) / ((highbound - lowbound)/div) )
+	return led
+
 while True:
 
     livedata = metlink.get_vehicle_positions()
@@ -45,25 +53,30 @@ while True:
         for bus in active_buses:
             print(f"{v['output_route']}: {bus} {v['route']}")
             # v['route'] will contain some segments, go through these and check where the bus is
-            for segment in v['route']:
+            for i,segment in enumerate(v['route']):
                 if "latitude" in segment.keys():
                     if (
                         bus["latitude"] >= min(segment["latitude"]) 
                         and bus["latitude"] <= max(segment["latitude"])
                    ):
-                        lowbound = min(segment["latitude"])
-                        highbound = max(segment["latitude"])
-                        div = segment["leds"]
-                        led = int((bus["latitude"] - min(segment["latitude"]))/((highbound - lowbound)/div))
+                        led = get_display_led(segment,bus,"latitude")
+                        # Now add on the previous segment LED total
+                        led += sum([w['leds'] for w in v['route'][:i]])
                         bus_list.append(led)
                 if "longitude" in segment.keys():
                    if (
                         bus["longitude"] >= min(segment["longitude"])
                         and bus["longitude"] <= max(segment["longitude"])
                     ):
-                       print(segment)
-        mqtt_payload[v['output_route']] = bus_list
+                        led = get_display_led(segment,bus,"longitude")
+		        # Now add on the previous segment LED totals
+                        led += sum([w['leds'] for w in v['route'][:i]])
+                        bus_list.append(led)
+
+        if len(bus_list) > 0:
+            mqtt_payload[v['output_route']] = bus_list
 
     print(f"{mqtt_payload=}")
     mqttc.publish('bus/positions',str(mqtt_payload))
-    sleep(10)                       
+    sleep(10)
+
