@@ -70,86 +70,60 @@ void callback(char* topic, byte* payload, unsigned int length) {
     return;
   }
   
-  JsonArray pos;
-  int count;
-  bool stoparray;
-  
-  pos = json_doc["32x"];
-  int tpos32x;
+  JsonArray positions;
+
   int tpos32x_check[5];
   int tpos32x_counter = 0;
-  int tpos;
-  int tpos1;
-  count = sizeof(pos);
-  Serial.println(count);
-  stoparray = false;
-  for (int i = 0; i < count; i++) {
-    tpos32x = pos[i];
-    if (tpos32x > 0) {
-      stoparray = true;
-      }
-    if (tpos32x == 0 and (i == 0 or stoparray)) {
-      break;
-    }
-    strip.setPixelColor(route32x[tpos32x], g);
+  int pos_int;
+  
+  positions = json_doc["32x"];
+  for (JsonVariant pos: positions) {
+    pos_int = pos.as<int>();
+    Serial.print("32x position:");
+    Serial.println(pos_int);
+    strip.setPixelColor(route32x[pos_int],g);
     // Keep a record of the lights we have lit up for the 32x
     // in case they collide with a number 1
-    tpos32x_check[tpos32x_counter] = route32x[tpos32x];
+    tpos32x_check[tpos32x_counter] = route32x[pos_int];
     tpos32x_counter++;
-    strip.show();
   }
 
-  pos = json_doc["1"];
-  count = sizeof(pos);
-  Serial.println(count);
-  stoparray = false;
-  bool yellow;
-  for (int i = 0; i < count; i++) {
-    yellow = false;
-    tpos1 = pos[i];
-    if (tpos1 > 0) {
-      stoparray = true;
-      }
-    if (tpos1 == 0 and (i == 0 or stoparray)) {
-      break;
-    }
+  positions = json_doc["29"];
+  for (JsonVariant pos: positions) {
+    pos_int = pos.as<int>();
+    Serial.print("29 position:");
+    Serial.println(pos_int);
+    strip.setPixelColor(route29[pos_int],b);
+  }
+
+  positions = json_doc["1"];
+  for (JsonVariant pos: positions) {
+    pos_int = pos.as<int>();
+    Serial.print("1 position:");
+    Serial.println(pos_int);
+    bool yellow = false;
     // if tpos32x and tpos1 collide, set to yellow
     for (int tx = 0; tx < 5; tx++) {
       Serial.println("Checking for yellow");
+      Serial.print("32x position: ");
       Serial.println(tpos32x_check[tx]);
-      Serial.println(route1[tpos1]);
-      if (tpos32x_check[tx] == route1[tpos1]) {
+      Serial.print("1 position: ");
+      Serial.println(route1[pos_int]);
+      if (tpos32x_check[tx] == route1[pos_int]) {
         yellow = true;
       }
     }
     // Set the light to yellow if 1 and 32x are in the same place
     if (yellow) {
       Serial.println("Setting to yellow");
-      strip.setPixelColor(route1[tpos1], y);
+      strip.setPixelColor(route1[pos_int], y);
     }
     // Just a number 1 bus at this point, so set the light to red
     else {
-      strip.setPixelColor(route1[tpos1], r);
+      strip.setPixelColor(route1[pos_int], r);
     }
-    strip.show();
   }
-
-  // The simple version is for bus 29 - no overlaps on this route
-  pos = json_doc["29"];
-  count = sizeof(pos);
-  Serial.println(count);
-  stoparray = false;
-  for (int i = 0; i < count; i++) {
-    tpos = pos[i];
-    if (tpos > 0) {
-      stoparray = true;
-      }
-    if (tpos == 0 and (i == 0 or stoparray)) {
-      break;
-    }
-    strip.setPixelColor(route29[tpos], b);
-    strip.show();
-  }
+  strip.show();
 }
 
 void reconnect() {
