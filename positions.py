@@ -15,8 +15,8 @@ mqttc.connect("milton18.asuscomm.com")
 metlink = Metlink(os.environ['METLINK_API_KEY'])
 
 # Bounds for each track:
-Adelaide_South = {"latitude":[-41.34311939,-41.31980227],"leds":20}
-Adelaide_North = {"latitude":[-41.31980227,-41.318],"leds":5}
+Adelaide_South = {"latitude":[-41.34311939,-41.3200],"leds":20}
+Adelaide_North = {"latitude":[-41.3197,-41.318],"leds":5}
 Luxford = {"longitude":[174.7757236,174.7775174],"leds":5}
 Russell = {"latitude":[-41.3392639,-41.31706437],"leds":20}
 Rintoul = {"latitude":[-41.31962957,-41.31706437],"leds":5}
