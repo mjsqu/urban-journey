@@ -21,6 +21,10 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
      integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
      crossorigin=""/>
+     <script>
+	     // Points are brought through from main.py
+         var shapes = {{ shapes | tojson }};
+     </script>
      <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
      integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
      crossorigin=""></script>
@@ -30,12 +34,7 @@
 <body>
 
   <h1>Wellington</h1>
-
-  <h2>Last 10 visits</h2>
-  {% for time in times %}
-    <p>{{ time }}</p>
-  {% endfor %}
-
+    <div id="testspan"></div>
   <div id="map"></div>
 
 </body>

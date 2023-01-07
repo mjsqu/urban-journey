@@ -20,17 +20,41 @@ from flask import Flask, render_template
 
 app = Flask(__name__)
 
+METLINK_API_KEY=""
 
 @app.route('/')
 def root():
+    import requests
+    import csv
+    from metlink import Metlink
+    
+    # Try out 25 points and add them to the map
+    trips = {}
+    with open('static/trips.txt','r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            shape_id = row['shape_id']
+            if shape_id not in trips.keys():
+                trips[shape_id] = {'direction_id':row['direction_id'],
+                               'route_id':row['route_id'],
+                               'service_id':row['service_id']}
+            else:
+                print('Unexpected')
+    
+    shapes = {}
+    with open('static/shapes.txt','r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            shape_id = row['shape_id']
+            if shape_id not in shapes.keys():
+                shapes[shape_id] = {}
+                shapes[shape_id]['shape'] = []
+                shapes[shape_id]['trip_info'] = trips.get(shape_id,{})
+            shapes[shape_id]['shape'].append([float(row['shape_pt_lat']),float(row['shape_pt_lon'])])
+
     # For the sake of example, use static information to inflate the template.
     # This will be replaced with real information in later steps.
-    dummy_times = [datetime.datetime(2018, 1, 1, 10, 0, 0),
-                   datetime.datetime(2018, 1, 2, 10, 30, 0),
-                   datetime.datetime(2018, 1, 3, 11, 0, 0),
-                   ]
-
-    return render_template('index.html', times=dummy_times)
+    return render_template('index.html', shapes=shapes)
 
 
 if __name__ == '__main__':

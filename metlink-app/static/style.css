@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
-body {
+html, body {
   font-family: "helvetica", sans-serif;
   text-align: center;
+  height: 100%;
+  margin: 0;
+
 }
 
 #map { height: 360px; }
+
+.wiggle { 
+  stroke: red;
+  stroke-width: 5;
+}
