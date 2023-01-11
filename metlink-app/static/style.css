@@ -22,9 +22,41 @@ html, body {
 
 }
 
-#map { height: 360px; }
+#map { height: 100%;
+z-index:0;
+  top:0;
+  left:0;
+}
 
-.wiggle { 
+.wiggle {
   stroke: red;
   stroke-width: 5;
+}
+
+.sidebar {
+  height: 100%;
+  width: 0;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: #111;
+  overflow-x: hidden;
+  transition: 0.5s;
+  padding-top: 60px;
+}
+
+.openbtn {
+  font-size: 20px;
+  cursor: pointer;
+  background-color: #111;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  z-index: 500;
+  position: absolute;
+}
+
+.openbtn:hover {
+  background-color: #444;
 }

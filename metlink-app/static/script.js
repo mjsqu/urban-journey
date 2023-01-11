@@ -12,69 +12,133 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 // [START gae_python38_log]
 // [START gae_python3_log]
 'use strict';
 
-window.addEventListener('load', function () {
+window.addEventListener('load', function() {
+
+    // Setting up the map, centred on Wellington
+    var map = L.map('map').setView([-41.29379439, 174.7823273], 13);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        minZoom: 12,
+        maxZoom: 17,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
 
 
-    var map = L.map('map').setView([-41.29379439,174.7823273], 14);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-}).addTo(map);
-
-
-    // shapes
+    // Add a polyline to the map for each route shape found in shapes (passed from main.py)
+    var polylines = [];
+    var selectedRoutes = [];
     for (const [key, value] of Object.entries(shapes)) {
+
+        // Route List Setup
+        var cbdiv = document.getElementById('sidebar');
+        var checkbox = document.createElement('input');
+        checkbox.type = "checkbox";
+        checkbox.name = key;
+        checkbox.value = "value";
+        checkbox.id = key;
+
+        var label = document.createElement('label')
+        label.htmlFor = key;
+        label.style.color = '#'+value.trip_info.route_text_color;
+        label.style.backgroundColor = '#'+value.trip_info.route_color;
+        label.appendChild(document.createTextNode(value.trip_info.route_short_name+' - '+value.trip_info.route_description+' ('+value.trip_info.route_type+')'));
         
-    var firstpolyline = new L.Polyline(value['shape'], {
-	  // set a className so styling can be handled (and modified) by CSS
-	  className: 'wiggle'
-});
-    // define a mouseover that displays information
-    firstpolyline.on('mouseover',(e)=>{
-  document.getElementById('testspan').innerHTML = JSON.stringify(value['trip_info']);
-});
+        document.body.appendChild(cbdiv);
+        if (document.getElementById('route_type_'+value.trip_info.route_type)) {
+          document.getElementById('route_type_'+value.trip_info.route_type).appendChild(checkbox);
+          document.getElementById('route_type_'+value.trip_info.route_type).appendChild(label);
+          
+        }
+        else {
+          document.getElementById('spare').appendChild(checkbox)
+        document.getElementById('spare').appendChild(label)
+          
+        }
+        //cbdiv.appendChild(checkbox);
+        //cbdiv.appendChild(label);
+        // END of route list setup
+
+        for (const shape of value.shapes) {
+          
+        var firstpolyline = new L.Polyline(shape.points, {
+            // set a className so styling can be handled (and modified) by CSS
+            //className: 'wiggle',
+            color: '#'+value.trip_info.route_color,
+            id: key
+        });
+        // define a mouseover that displays information
+        firstpolyline.on('mouseover', (e) => {
+            //document.getElementById('testspan').innerHTML = JSON.stringify(value.trip_info);
+        });
 
 
-  firstpolyline.addTo(map);
+        firstpolyline.addTo(map);
+        polylines.push(firstpolyline);
+        }
     }
-     
+
     // store the old markers so they can be removed on each call
     var old_markers = [];
-    const intervalID = setInterval(myCallback, 3000);
-    // Now fetch and plot on the map
-    function myCallback() {
-     fetch('https://api.opendata.metlink.org.nz/v1/gtfs-rt/vehiclepositions', {
-        method: 'GET',
-        headers: {
-            'X-API-KEY': '',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then((response) => response.json())
-    .then((data) => 
-          {
-         // loop over the last list of markers and remove them all
-         for (var m of old_markers) {
-            m.remove();
-         };
-         // loop over the new data and add it to the map - store the markers in a list for removal next time 
-         for (const vehicle of data['entity']) {
-            console.log(vehicle['vehicle']['position']);
-            var position = vehicle['vehicle']['position'];
-            var marker = L.marker([position['latitude'],position['longitude']])
-            old_markers.push(marker);
-            marker.addTo(map);
-         };
-     });
+    
+    // repeating function getting vehicle positions
+    function updateVehicles() {
+        fetch('/vehicle_locations', {
+                method: 'GET'
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                // loop over the last list of markers and remove them all
+                for (var m of old_markers) {
+                    m.remove();
+                };
+                // loop over the new data and add it to the map - store the markers in a list for removal next time
+                for (const vehicle of data.entity) {
+                    var position = vehicle.vehicle.position;
+                    var marker = L.marker([position.latitude, position.longitude])
+                    old_markers.push(marker);
+                    // only add to the map if the route polyline is visible
+                    if ( selectedRoutes.includes(vehicle.vehicle.trip.route_id+"_"+vehicle.vehicle.trip.direction_id) ) {
+                      marker.addTo(map);
+                    }
+                }
+            });
     }
-   
->>>>>>> 506705e65c8e614a90270b957e656c9a55d5600c
+    
+    updateVehicles();
+    const intervalID = setInterval(updateVehicles, 30000);
+    
+    const shapeCheckBoxes = document.querySelectorAll('input');
+    
+    for (const shapeCheckBox of shapeCheckBoxes) {
+      shapeCheckBox.addEventListener('click', updateDisplay);
+    }
+    
+    function getPolylinebyID(polylineid) {
+      for (const polyline of polylines) {
+        if (polyline.options.id == polylineid) {
+          return polyline;
+        }
+      }
+    }
+    
+    function updateDisplay() {
+      for (const polyline of polylines) {
+        //console.log("Removing:"+polyline.options.id);
+        polyline.remove();
+      }
+      selectedRoutes = [];
+      for (const shapeCheckBox of shapeCheckBoxes) {
+        if (shapeCheckBox.checked) {
+          getPolylinebyID(shapeCheckBox.id).addTo(map);
+          selectedRoutes.push(shapeCheckBox.id);
+        }
+      }
+      updateVehicles();
+    }
 });
 // [END gae_python3_log]
 // [END gae_python38_log]

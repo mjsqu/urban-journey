@@ -23,39 +23,90 @@ app = Flask(__name__)
 METLINK_API_KEY=""
 
 @app.route('/')
-def root():
-    import requests
-    import csv
-    from metlink import Metlink
+def sqlite_version():
+    import sqlite3,json
     
-    # Try out 25 points and add them to the map
-    trips = {}
-    with open('static/trips.txt','r') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            shape_id = row['shape_id']
-            if shape_id not in trips.keys():
-                trips[shape_id] = {'direction_id':row['direction_id'],
-                               'route_id':row['route_id'],
-                               'service_id':row['service_id']}
-            else:
-                print('Unexpected')
+    gtfs_db_file = './static/gtfs.db'
+    conn = sqlite3.connect(gtfs_db_file)
+    
+    cur = conn.cursor()
+    
+    # This query needs to have distinct shapes
+    sql_query = """
+WITH qr1 as (
+SELECT DISTINCT routes.route_id||'_'||ifnull(direction_id,'_') as route_key
+                ,json_object(
+                  'direction_id',direction_id,
+                  'route_type',route_type,
+                  'route_description',
+                        case
+                        when direction_id = '0' then route_desc
+                        else route_long_name end,
+                  'route_color',route_color,
+                  'route_text_color',route_text_color,
+                  'route_short_name',route_short_name
+                ) as route_info
+                ,shape_id
+                
+FROM   routes
+       INNER JOIN
+       trips
+ON routes.route_id = trips.route_id),
+qr2 as (
+select
+  route_key
+  
+  ,json(route_info) as route_info
+  
+  ,shapes.shape_id
+  
+  ,json_group_array(json_array(
+  shapes.shape_pt_lat,
+  shapes.shape_pt_lon)) as points
+from qr1
+INNER JOIN
+shapes
+ON shapes.shape_id = qr1.shape_id
+group by 1,2,3),
+qr3 as (
+select
+  route_key
+  ,json(route_info) as route_info
+  ,json_group_array(json_object('shape_id',shape_id,'points',json(points))) as shapes
+from qr2
+group by 1,2)
+select route_key, json(route_info), json(shapes) from qr3;
+    """
+    
+    cur.execute(sql_query)
+    
+    rows = cur.fetchall()
     
     shapes = {}
-    with open('static/shapes.txt','r') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            shape_id = row['shape_id']
-            if shape_id not in shapes.keys():
-                shapes[shape_id] = {}
-                shapes[shape_id]['shape'] = []
-                shapes[shape_id]['trip_info'] = trips.get(shape_id,{})
-            shapes[shape_id]['shape'].append([float(row['shape_pt_lat']),float(row['shape_pt_lon'])])
+    trips = {}
+    for row in rows:
+        route_key = row[0]
+        shapes[route_key] = {}
+        shapes[route_key]['shapes'] = json.loads(row[2])
+        shapes[route_key]['trip_info'] = json.loads(row[1])
 
-    # For the sake of example, use static information to inflate the template.
-    # This will be replaced with real information in later steps.
     return render_template('index.html', shapes=shapes)
+        
+@app.route('/vehicle_locations', methods=['GET'])
+def vehicle_locations():
+    import os, requests
+    METLINK_API_KEY = os.environ.get('METLINK_API_KEY')
 
+    response = requests.get(
+    'https://api.opendata.metlink.org.nz/v1/gtfs-rt/vehiclepositions',
+    headers={
+            'X-API-KEY': METLINK_API_KEY,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    )
+    
+    return response.json()
 
 if __name__ == '__main__':
     # This is used when running locally only. When deploying to Google App

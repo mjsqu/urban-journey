@@ -18,24 +18,53 @@
 <html>
 <head>
   <title>Wellington Bus Map</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-     integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
-     crossorigin=""/>
-     <script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+    integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+    crossorigin=""/>
+     
+    <script>
 	     // Points are brought through from main.py
          var shapes = {{ shapes | tojson }};
-     </script>
-     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-     integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
-     crossorigin=""></script>
+    </script>
+     
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+    integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+    crossorigin=""></script>
+    
   <script src="{{ url_for('static', filename='script.js') }}"></script>
+  
   <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+
+function openNav() {
+  document.getElementById("sidebar").style.width = "250px";
+  document.getElementById("map").style.marginLeft = "250px";
+}
+
+function closeNav() {
+  document.getElementById("sidebar").style.width = "0";
+  document.getElementById("map").style.marginLeft= "0";
+}
+  </script>
 </head>
 <body>
 
-  <h1>Wellington</h1>
-    <div id="testspan"></div>
-  <div id="map"></div>
+  <!-- This is a bit horrible, make it dynamic -->
+  <div id="sidebar" class="sidebar">
+    <div id="route_type_2"></div>
+    <div id="route_type_3">
+      <div id="Wgn"></div>
+      <div id="Wai"></div>
+      <div id="Kap"></div>
+      <div id="Night"></div>
+      <div id="Special"></div>
+    </div>
+    <div id="route_type_5"></div>
+    <div id="spare"></div>
+  </div>
+  <div id="map">
+    <button class="openbtn" onclick="openNav()">☰ Open Sidebar</button>
+  </div>
 
 </body>
 </html>
