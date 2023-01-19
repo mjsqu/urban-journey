@@ -4,6 +4,8 @@ import os
 import zipfile
 import requests
 
+TEXT_FILE_LIST = ['routes.txt','shapes.txt','trips.txt']
+
 # Create a table for each text file so that we can do SQL type analysis on the data
 url = "https://static.opendata.metlink.org.nz/v1/gtfs/full.zip"
 path_to_zip_file = '../metlink-app/static/full.zip'
@@ -19,10 +21,14 @@ with zipfile.ZipFile(path_to_zip_file, 'r') as zip_ref:
 
 # build a list of text files
 textfiles = [file for file in os.listdir(directory_to_extract_to) if file[-3:] == 'txt']
+
+# filter text files on those required
+textfiles = [textfile for textfile in textfiles if textfile in TEXT_FILE_LIST]
+
 print(textfiles)
 
 def create_table(textfile):
-    tablename = textfile.split('/')[-1].split('.')[0] 
+    tablename = textfile.split('/')[-1].split('.')[0]
     con = sqlite3.connect("../metlink-app/static/gtfs.db") # change to 'sqlite:///your_filename.db'
     cur = con.cursor()
 

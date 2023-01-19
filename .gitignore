@@ -130,3 +130,5 @@ dmypy.json
 
 # Nohup file
 nohup.out
+
+metlink-app/env_variables.yaml
