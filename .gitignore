@@ -132,3 +132,6 @@ dmypy.json
 nohup.out
 
 metlink-app/env_variables.yaml
+metlink-app/static/*.txt
+metlink-app/static/*.zip
+metlink-app/static/*.db
