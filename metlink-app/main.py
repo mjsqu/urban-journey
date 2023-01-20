@@ -92,7 +92,7 @@ select route_key, json(route_info), json(shapes) from qr3;
 
     return render_template('index.html', shapes=shapes)
         
-@app.route('/vehicle_locations', methods=['GET'])
+@app.route('/vehicle_locations', methods=['POST'])
 def vehicle_locations():
     import os, requests
     METLINK_API_KEY = os.environ.get('METLINK_API_KEY')
