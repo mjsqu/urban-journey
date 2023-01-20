@@ -16,7 +16,7 @@
 # [START gae_python3_render_template]
 import datetime
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify, abort
 
 from logging.config import dictConfig
 
@@ -114,12 +114,18 @@ select route_key, json(route_info), json(shapes) from qr3;
         
 @app.route('/vehicle_locations', methods=['POST'])
 def vehicle_locations():
-    import os, requests, json
+    import os, requests
     METLINK_API_KEY = os.environ.get('METLINK_API_KEY')
     
-    app.logger.info(f"Requested routes: {request.get_json()}")
+    selected_routes = request.get_json()
+    
+    # Do not allow empty/blank selections
+    if selected_routes == None:
+        abort(400)
+        
+    app.logger.info(f"Requested routes: {selected_routes}")
 
-    response = requests.get(
+    metlink_response = requests.get(
     'https://api.opendata.metlink.org.nz/v1/gtfs-rt/vehiclepositions',
     headers={
             'X-API-KEY': METLINK_API_KEY,
@@ -131,9 +137,9 @@ def vehicle_locations():
     """
     Filter the requests
     """
-    response_json = response.json()
+    metlink_response_json = metlink_response.json()
     
-    filtered_results = [vehicle for vehicle in response_json.get('entity') if (f"{vehicle.get('vehicle').get('trip').get('route_id')}_{vehicle.get('vehicle').get('trip').get('direction_id')}" in request.get_json())]
+    filtered_results = [vehicle for vehicle in metlink_response_json.get('entity') if (f"{vehicle.get('vehicle').get('trip').get('route_id')}_{vehicle.get('vehicle').get('trip').get('direction_id')}" in selected_routes)]
     
     """
     Construct a new object with just:
@@ -149,7 +155,7 @@ def vehicle_locations():
         
         vehicle_locations.append(vehicle_response)
 
-    return json.dumps(vehicle_locations)
+    return jsonify(vehicle_locations)
 
 if __name__ == '__main__':
     # This is used when running locally only. When deploying to Google App
