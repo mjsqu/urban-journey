@@ -87,7 +87,7 @@ window.addEventListener('load', function() {
     // repeating function getting vehicle positions
     function updateVehicles() {
         fetch('/vehicle_locations', {
-                method: 'GET'
+                method: 'POST'
             })
             .then((response) => response.json())
             .then((data) => {
