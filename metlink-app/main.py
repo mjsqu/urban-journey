@@ -16,7 +16,25 @@
 # [START gae_python3_render_template]
 import datetime
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
+
+from logging.config import dictConfig
+
+dictConfig({
+    'version': 1,
+    'formatters': {'default': {
+        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+    }},
+    'handlers': {'wsgi': {
+        'class': 'logging.StreamHandler',
+        'stream': 'ext://flask.logging.wsgi_errors_stream',
+        'formatter': 'default'
+    }},
+    'root': {
+        'level': 'INFO',
+        'handlers': ['wsgi']
+    }
+})
 
 app = Flask(__name__)
 
@@ -82,6 +100,8 @@ select route_key, json(route_info), json(shapes) from qr3;
     
     rows = cur.fetchall()
     
+    app.logger.info(f"Passing {len(rows)} routes to template")
+    
     shapes = {}
     trips = {}
     for row in rows:
@@ -94,8 +114,10 @@ select route_key, json(route_info), json(shapes) from qr3;
         
 @app.route('/vehicle_locations', methods=['POST'])
 def vehicle_locations():
-    import os, requests
+    import os, requests, json
     METLINK_API_KEY = os.environ.get('METLINK_API_KEY')
+    
+    app.logger.info(f"Requested routes: {request.get_json()}")
 
     response = requests.get(
     'https://api.opendata.metlink.org.nz/v1/gtfs-rt/vehiclepositions',
@@ -106,7 +128,28 @@ def vehicle_locations():
         }
     )
     
-    return response.json()
+    """
+    Filter the requests
+    """
+    response_json = response.json()
+    
+    filtered_results = [vehicle for vehicle in response_json.get('entity') if (f"{vehicle.get('vehicle').get('trip').get('route_id')}_{vehicle.get('vehicle').get('trip').get('direction_id')}" in request.get_json())]
+    
+    """
+    Construct a new object with just:
+    route_direction, bearing, position
+    """
+    vehicle_locations = []
+    for vehicle_info in [r.get('vehicle') for r in filtered_results]:
+        
+        vehicle_response = {}
+        
+        vehicle_response['route_and_direction'] = f"{vehicle_info.get('trip').get('route_id')}_{vehicle_info.get('trip').get('direction_id')}"
+        vehicle_response['position'] = vehicle_info.get('position')
+        
+        vehicle_locations.append(vehicle_response)
+
+    return json.dumps(vehicle_locations)
 
 if __name__ == '__main__':
     # This is used when running locally only. When deploying to Google App
