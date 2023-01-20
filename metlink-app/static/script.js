@@ -31,9 +31,15 @@ window.addEventListener('load', function() {
     // Add a polyline to the map for each route shape found in shapes (passed from main.py)
     var polylines = [];
     var selectedRoutes = [];
-    for (const [key, value] of Object.entries(shapes)) {
+    
+    console.log(`Found ${Object.entries(shapes).length} routes to plot`);
+    
+     for (const [key, value] of Object.entries(shapes)) {
 
         // Route List Setup
+        var route_type = value.trip_info.route_type;
+        var route_short_name = value.trip_info.route_short_name;
+        
         var cbdiv = document.getElementById('sidebar');
         var checkbox = document.createElement('input');
         checkbox.type = "checkbox";
@@ -45,18 +51,50 @@ window.addEventListener('load', function() {
         label.htmlFor = key;
         label.style.color = '#'+value.trip_info.route_text_color;
         label.style.backgroundColor = '#'+value.trip_info.route_color;
-        label.appendChild(document.createTextNode(value.trip_info.route_short_name+' - '+value.trip_info.route_description+' ('+value.trip_info.route_type+')'));
+        label.appendChild(document.createTextNode(route_short_name+' - '+value.trip_info.route_description+' ('+route_type+')'));
         
         document.body.appendChild(cbdiv);
-        if (document.getElementById('route_type_'+value.trip_info.route_type)) {
-          document.getElementById('route_type_'+value.trip_info.route_type).appendChild(checkbox);
-          document.getElementById('route_type_'+value.trip_info.route_type).appendChild(label);
+        
+        if (document.getElementById('route_type_'+route_type)) {
+          if (route_type == 3) {
+            if (route_short_name.startsWith('N')) {
+              document.getElementById('Night').appendChild(checkbox);
+              document.getElementById('Night').appendChild(label);
+            }
+            else if (parseInt(route_short_name) < 100) {
+              document.getElementById('Wgn').appendChild(checkbox);
+              document.getElementById('Wgn').appendChild(label);
+            }
+            else if (parseInt(route_short_name) < 200) {
+              document.getElementById('Hutt').appendChild(checkbox);
+              document.getElementById('Hutt').appendChild(label);
+            }
+            else if (parseInt(route_short_name) < 210) {
+              document.getElementById('Wai').appendChild(checkbox);
+              document.getElementById('Wai').appendChild(label);
+            }
+            else if (parseInt(route_short_name) < 250) {
+              document.getElementById('Por').appendChild(checkbox);
+              document.getElementById('Por').appendChild(label);
+            }
+            else if (parseInt(route_short_name) < 300) {
+              document.getElementById('Kap').appendChild(checkbox);
+              document.getElementById('Kap').appendChild(label);
+            }
+            else {
+            document.getElementById('route_type_'+route_type).appendChild(checkbox);
+            document.getElementById('route_type_'+route_type).appendChild(label);
+            }
+          }
           
+          else {
+            document.getElementById('route_type_'+route_type).appendChild(checkbox);
+            document.getElementById('route_type_'+route_type).appendChild(label);
+          }
         }
         else {
           document.getElementById('spare').appendChild(checkbox)
-        document.getElementById('spare').appendChild(label)
-          
+          document.getElementById('spare').appendChild(label)
         }
         //cbdiv.appendChild(checkbox);
         //cbdiv.appendChild(label);
@@ -87,21 +125,26 @@ window.addEventListener('load', function() {
     // repeating function getting vehicle positions
     function updateVehicles() {
         fetch('/vehicle_locations', {
-                method: 'POST'
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(selectedRoutes)
             })
             .then((response) => response.json())
             .then((data) => {
+                console.log(data);
                 // loop over the last list of markers and remove them all
                 for (var m of old_markers) {
                     m.remove();
                 };
                 // loop over the new data and add it to the map - store the markers in a list for removal next time
-                for (const vehicle of data.entity) {
-                    var position = vehicle.vehicle.position;
+                for (const vehicle of data) {
+                    var position = vehicle.position;
                     var marker = L.marker([position.latitude, position.longitude])
                     old_markers.push(marker);
                     // only add to the map if the route polyline is visible
-                    if ( selectedRoutes.includes(vehicle.vehicle.trip.route_id+"_"+vehicle.vehicle.trip.direction_id) ) {
+                    if ( selectedRoutes.includes(vehicle.route_and_direction) ) {
                       marker.addTo(map);
                     }
                 }
@@ -109,6 +152,7 @@ window.addEventListener('load', function() {
     }
     
     updateVehicles();
+    console.log("Vehicles updated - polling...");
     const intervalID = setInterval(updateVehicles, 30000);
     
     const shapeCheckBoxes = document.querySelectorAll('input');
