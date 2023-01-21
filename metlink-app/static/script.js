@@ -20,7 +20,11 @@
 window.addEventListener('load', function() {
 
     // Setting up the map, centred on Wellington
-    var map = L.map('map').setView([-41.29379439, 174.7823273], 13);
+    var southWest = L.latLng(-41.372086, 174.653876),
+    northEast = L.latLng(-40.557293, 175.843588),
+    bounds = L.latLngBounds(southWest, northEast);
+    
+    var map = L.map('map',{maxBounds:bounds}).setView([-41.29379439, 174.7823273], 13);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         minZoom: 12,
         maxZoom: 17,
