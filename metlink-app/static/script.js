@@ -145,7 +145,28 @@ window.addEventListener('load', function() {
                 // loop over the new data and add it to the map - store the markers in a list for removal next time
                 for (const vehicle of data) {
                     var position = vehicle.position;
-                    var marker = L.marker([position.latitude, position.longitude])
+                    
+                    console.log(position.bearing);
+                    var iconHtml = '';
+                    // need to translate to 0, 45, 90, 135, 180, 225, 270, 315
+                    if (position.bearing > (360+315)/2 && position.bearing < (0+45)/2 ) {iconHtml = '⬆️';}
+                    else if (position.bearing < (45+90)/2 ) {iconHtml = '↗️';}
+                    else if (position.bearing < (90+135)/2 ) {iconHtml = '➡️';}
+                    else if (position.bearing < (135+180)/2 ) {iconHtml = '↘️';}
+                    else if (position.bearing < (180+225)/2 ) {iconHtml = '⬇️';}
+                    else if (position.bearing < (225+270)/2 ) {iconHtml = '↙️';}
+                    else if (position.bearing < (270+315)/2 ) {iconHtml = '⬅️';}
+                    else if (position.bearing < (315+360)/2 ) {iconHtml = '↖️';}
+                    
+                    const iconOptions = {
+                      html: iconHtml,
+                      iconSize: null
+                    }
+                    const markerOptions = {
+                      icon: L.divIcon(iconOptions),
+                    }
+
+                    var marker = L.marker([position.latitude, position.longitude],markerOptions)
                     old_markers.push(marker);
                     // only add to the map if the route polyline is visible
                     if ( selectedRoutes.includes(vehicle.route_and_direction) ) {
