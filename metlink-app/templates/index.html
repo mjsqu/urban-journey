@@ -49,23 +49,20 @@ function closeNav() {
 </head>
 <body>
 
-  <!-- This is a bit horrible, make it dynamic -->
   <div id="sidebar" class="sidebar">
-    <div id="route_type_2"></div>
-    <div id="route_type_3">
-      <div id="Wgn"></div>
-      <div id="Hutt"></div>
-      <div id="Wai"></div>
-      <div id="Por"></div>
-      <div id="Kap"></div>
-      <div id="Night"></div>
-      <div id="Special"></div>
+    {% for route_type in route_types %}
+    <div id="route_type_{{ route_type }}">
+      {% if route_type == "3" %}
+        {% for region in bus_regions %}
+        <div id="{{region}}"></div>
+        {% endfor %}
+      {% endif %}
     </div>
-    <div id="route_type_5"></div>
+    {% endfor %}
     <div id="spare"></div>
   </div>
   <div id="map">
-    <button class="openbtn" onclick="openNav()">☰ Open Sidebar</button>
+    <button class="openbtn" onclick="openNav()">☰ Show Routes</button>
   </div>
 
 </body>

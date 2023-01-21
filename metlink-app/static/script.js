@@ -66,24 +66,24 @@ window.addEventListener('load', function() {
               document.getElementById('Night').appendChild(label);
             }
             else if (parseInt(route_short_name) < 100) {
-              document.getElementById('Wgn').appendChild(checkbox);
-              document.getElementById('Wgn').appendChild(label);
+              document.getElementById('Wellington').appendChild(checkbox);
+              document.getElementById('Wellington').appendChild(label);
             }
             else if (parseInt(route_short_name) < 200) {
-              document.getElementById('Hutt').appendChild(checkbox);
-              document.getElementById('Hutt').appendChild(label);
+              document.getElementById('Hutt Valley').appendChild(checkbox);
+              document.getElementById('Hutt Valley').appendChild(label);
             }
             else if (parseInt(route_short_name) < 210) {
-              document.getElementById('Wai').appendChild(checkbox);
-              document.getElementById('Wai').appendChild(label);
+              document.getElementById('Wairarapa').appendChild(checkbox);
+              document.getElementById('Wairarapa').appendChild(label);
             }
             else if (parseInt(route_short_name) < 250) {
-              document.getElementById('Por').appendChild(checkbox);
-              document.getElementById('Por').appendChild(label);
+              document.getElementById('Porirua').appendChild(checkbox);
+              document.getElementById('Porirua').appendChild(label);
             }
             else if (parseInt(route_short_name) < 300) {
-              document.getElementById('Kap').appendChild(checkbox);
-              document.getElementById('Kap').appendChild(label);
+              document.getElementById('Kāpiti').appendChild(checkbox);
+              document.getElementById('Kāpiti').appendChild(label);
             }
             else {
             document.getElementById('route_type_'+route_type).appendChild(checkbox);
