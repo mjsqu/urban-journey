@@ -54,12 +54,22 @@ function closeNav() {
     <div id="route_type_{{ route_type }}">
       {% if route_type == "3" %}
         {% for region in bus_regions %}
-        <div id="{{region}}"></div>
+        <div id="{{ region }}"></div>
         {% endfor %}
       {% endif %}
     </div>
     {% endfor %}
     <div id="spare"></div>
+    {% for shape,info in shapes.items() %}
+    <div>
+      <input type="checkbox" id="{{ shape }}"></input>
+      <label for="{{ shape }}"
+        style="background-color:#{{ info['trip_info']['route_color'] }};color:#{{ info['trip_info']['route_text_color'] }}"
+      >
+        {{ info['trip_info']['route_short_name'] }} - {{ info['trip_info']['route_description'] }}
+      </label>
+    </div>
+    {% endfor %}
   </div>
   <div id="map">
     <button class="openbtn" onclick="openNav()">☰ Show Routes</button>
