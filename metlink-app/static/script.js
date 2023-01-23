@@ -148,6 +148,7 @@ window.addEventListener('load', function() {
       }
       updateVehicles();
     }
+    
 });
 // [END gae_python3_log]
 // [END gae_python38_log]

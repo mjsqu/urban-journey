@@ -232,6 +232,9 @@ def vehicle_locations():
         
         vehicle_response = {}
         
+        if vehicle_info.get('trip').get('route_id') is None or vehicle_info.get('trip').get('direction_id') is None:
+            app.logger.warning(f"Missing information in: {vehicle_info=}")
+        
         vehicle_response['route_and_direction'] = f"{vehicle_info.get('trip').get('route_id')}_{vehicle_info.get('trip').get('direction_id')}"
         vehicle_response['position'] = vehicle_info.get('position')
         
