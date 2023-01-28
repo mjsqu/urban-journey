@@ -16,7 +16,7 @@
 
 html, body {
   font-family: "helvetica", sans-serif;
-  text-align: center;
+  text-align: left;
   height: 100%;
   margin: 0;
 
@@ -42,7 +42,7 @@ z-index:0;
   left: 0;
   background-color: #111;
   overflow-x: hidden;
-  transition: 0.5s;
+  transition: 0s;
   padding-top: 60px;
 }
 
@@ -52,6 +52,7 @@ z-index:0;
   background-color: #111;
   color: white;
   padding: 10px 15px;
+  margin-left: 50%;
   border: none;
   z-index: 500;
   position: absolute;
@@ -59,6 +60,10 @@ z-index:0;
 
 .openbtn:hover {
   background-color: #444;
+}
+
+.route_list {
+  horizontal-align: left;
 }
 
 #map .leaflet-div-icon {
@@ -69,4 +74,8 @@ z-index:0;
   font-size: 30px;
   margin-left:-15px;
   margin-top:-15px;
+}
+
+input {
+  margin-top:2px;
 }

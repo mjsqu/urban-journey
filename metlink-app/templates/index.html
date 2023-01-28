@@ -17,6 +17,7 @@
 
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Wellington Bus Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
     integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
@@ -35,37 +36,73 @@
   
   <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script>
+    var sidebar_status = 0;
 
 function openNav() {
-  document.getElementById("sidebar").style.width = "250px";
-  document.getElementById("map").style.marginLeft = "250px";
-}
-
-function closeNav() {
-  document.getElementById("sidebar").style.width = "0";
-  document.getElementById("map").style.marginLeft= "0";
-}
+  if (sidebar_status == 0) {
+    document.getElementById("sidebar").style.width = "50%";
+    document.getElementById("map").style.marginLeft = "50%";
+    document.getElementById("openbtn").innerHTML = "☰ Hide Routes"
+    document.getElementById("openbtn").style.marginLeft = "0%";
+    sidebar_status = 1;
+  }
+  else if (sidebar_status == 1) {
+    document.getElementById("sidebar").style.width = "0%";
+    document.getElementById("map").style.marginLeft = "0%";
+    document.getElementById("openbtn").innerHTML = "☰ Show Routes"
+    document.getElementById("openbtn").style.marginLeft = "50%";
+    sidebar_status = 0;
+  }
+    
+  }
   </script>
 </head>
 <body>
 
-  <!-- This is a bit horrible, make it dynamic -->
   <div id="sidebar" class="sidebar">
-    <div id="route_type_2"></div>
-    <div id="route_type_3">
-      <div id="Wgn"></div>
-      <div id="Hutt"></div>
-      <div id="Wai"></div>
-      <div id="Por"></div>
-      <div id="Kap"></div>
-      <div id="Night"></div>
-      <div id="Special"></div>
+    {% for route_type in route_types %}
+    <div id="route_type_{{ route_type }}">
+      {% if route_type == "3" %}
+        {% for region in bus_regions %}
+        <div id="{{ region }}">
+            {% for shape, info in shapes.items() %}
+              {% if info['bus_region'] == region %}
+                <div
+                  style="background-color:#{{ info['trip_info']['route_color'] }};color:#{{ info['trip_info']['route_text_color'] }}"
+                >
+                  <input type="checkbox" id="{{ shape }}"/>
+                  <label for="{{ shape }}" class="route_label"
+                  >
+                    {{ info['trip_info']['route_short_name'] }} - {{ info['trip_info']['route_description'] }}
+                  </label>
+              </div>
+              {% endif %}
+            {% endfor %}
+        </div>
+        {% endfor %}
+      {% else %}
+        {% for shape, info in shapes.items() %}
+          {% if info['trip_info']['route_type'] == route_type %}
+          <div
+            style="background-color:#{{ info['trip_info']['route_color'] }};color:#{{ info['trip_info']['route_text_color'] }}"
+
+          >
+            <input type="checkbox" id="{{ shape }}"/>
+            <label for="{{ shape }}" class="route_label"
+            >
+              {{ info['trip_info']['route_short_name'] }} - {{ info['trip_info']['route_description'] }}
+            </label>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      
     </div>
-    <div id="route_type_5"></div>
+    {% endfor %}
     <div id="spare"></div>
   </div>
   <div id="map">
-    <button class="openbtn" onclick="openNav()">☰ Open Sidebar</button>
+    <button id="openbtn" class="openbtn" onclick="openNav()">☰ Show Routes</button>
   </div>
 
 </body>

@@ -40,9 +40,30 @@ app = Flask(__name__)
 
 METLINK_API_KEY=""
 
+ROUTE_TYPES = {
+    "0" :"Tram",
+    "1" :"Metro",
+    "2" : "Rail",
+    "3" : "Bus",
+    "4" : "Ferry",
+    "5" : "Cable tram",
+    "6" : "Aerial lift",
+    "7" : "Funicular",
+    "11" : "Trolleybus",
+    "12" : "Monorail",
+}
+
+BUS_REGIONS = {
+    100:"Wellington",
+    200:"Hutt Valley",
+    210:"Wairarapa",
+    250:"Porirua",
+    300:"Kāpiti",
+    }
+
 @app.route('/')
 def sqlite_version():
-    import sqlite3,json
+    import sqlite3,json,re
     
     gtfs_db_file = './static/gtfs.db'
     conn = sqlite3.connect(gtfs_db_file)
@@ -102,15 +123,76 @@ select route_key, json(route_info), json(shapes) from qr3;
     
     app.logger.info(f"Passing {len(rows)} routes to template")
     
+    bus_regions = [v for k,v in BUS_REGIONS.items()]
+    
+    bus_regions.append('Night')
+    
     shapes = {}
-    trips = {}
+    route_types = []
+    
+    # Loop over results and construct the shapes object and category lists for the template
     for row in rows:
         route_key = row[0]
+        lat_lon = json.loads(row[2])
+        trip_info = json.loads(row[1])
+        route_type = trip_info.get('route_type')
+        route_type_name = ROUTE_TYPES.get(route_type)
+        route_number = trip_info.get('route_short_name')
+        
         shapes[route_key] = {}
-        shapes[route_key]['shapes'] = json.loads(row[2])
-        shapes[route_key]['trip_info'] = json.loads(row[1])
+        shapes[route_key]['shapes'] = lat_lon
+        shapes[route_key]['trip_info'] = trip_info
+        shapes[route_key]['route_type_name'] = route_type_name
+        
+        if (route_type not in route_types):
+            route_types.append(route_type)
+        
+        """
+        Parse out the route number (if it is a number)
+        
+        Then get the region it is based in, using BUS_REGIONS
+        
+        e.g. <100 - Wellington, <200 Hutt Valley etc.
+        """
+        parsed_route_number = re.match('^(?P<parsed_route_number>\d+)',route_number)
+        
+        if parsed_route_number:
+            parsed_route_number = parsed_route_number.groupdict().get('parsed_route_number')
+            
+            for route_num_max,region_name in BUS_REGIONS.items():
+                if int(parsed_route_number) < route_num_max:
+                    
+                    bus_region = BUS_REGIONS[route_num_max]
+                    
+                    shapes[route_key]['bus_region'] = bus_region
+                    
+                    app.logger.debug(f"{route_number} - {parsed_route_number} in region {bus_region}")
+                    # If we have found the route is less than a particular maximum then stop
+                    # e.g. if we are <100 then Wellington
+                    break
 
-    return render_template('index.html', shapes=shapes)
+
+    """
+    shapes = {"10_1":{"shapes":[[x,y][z,w]],"trip_info":}}
+    
+                      'direction_id',direction_id,
+                  'route_type',route_type,
+                  'route_description',
+                        case
+                        when direction_id = '0' then route_desc
+                        else route_long_name end,
+                  'route_color',route_color,
+                  'route_text_color',route_text_color,
+                  'route_short_name',route_short_name
+    
+    """
+    
+    return render_template(
+        'index.html',
+        shapes=shapes,
+        route_types=route_types,
+        bus_regions=bus_regions,
+    )
         
 @app.route('/vehicle_locations', methods=['POST'])
 def vehicle_locations():
@@ -149,6 +231,9 @@ def vehicle_locations():
     for vehicle_info in [r.get('vehicle') for r in filtered_results]:
         
         vehicle_response = {}
+        
+        if vehicle_info.get('trip').get('route_id') is None or vehicle_info.get('trip').get('direction_id') is None:
+            app.logger.warning(f"Missing information in: {vehicle_info=}")
         
         vehicle_response['route_and_direction'] = f"{vehicle_info.get('trip').get('route_id')}_{vehicle_info.get('trip').get('direction_id')}"
         vehicle_response['position'] = vehicle_info.get('position')
