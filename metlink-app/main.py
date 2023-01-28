@@ -242,6 +242,116 @@ def vehicle_locations():
 
     return jsonify(vehicle_locations)
 
+@app.route('/tasks/refresh_gtfs_db', methods=['GET'])
+def refresh_gtfs_db():
+    import sqlite3
+    import csv
+    import os
+    import zipfile
+    import requests
+    
+    TEXT_FILE_LIST = ['routes.txt','shapes.txt','trips.txt']
+    REQUIRED_COLUMNS = {
+        "trips":[
+        'route_id',
+        'direction_id',
+        'shape_id',
+            ],
+        "routes":[
+            'route_id',
+            'route_type',
+            'route_desc',
+            'route_long_name',
+            'route_color',
+            'route_text_color',
+            'route_short_name',
+            ],
+        "shapes":[
+            'shape_id',
+            'shape_pt_lat',
+            'shape_pt_lon',
+            ],
+    }
+    
+    """
+    CREATE TABLE routes (route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color);
+    CREATE TABLE shapes (shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled);
+    CREATE TABLE trips (route_id,service_id,trip_id,trip_headsign,direction_id,block_id,shape_id,wheelchair_accessible,bikes_allowed,etm_id);
+    """
+    
+    # Create a table for each text file so that we can do SQL type analysis on the data
+    url = "https://static.opendata.metlink.org.nz/v1/gtfs/full.zip"
+    path_to_zip_file = './static/full.zip'
+    directory_to_extract_to = './static'
+    gtfs_db_file = "./static/gtfs.db"
+    
+    try:
+        os.remove(gtfs_db_file)
+    except:
+        pass
+    
+    # Get the file
+    r = requests.get(url)
+    open(path_to_zip_file , 'wb').write(r.content)
+    
+    # Unzip the file
+    with zipfile.ZipFile(path_to_zip_file, 'r') as zip_ref:
+        zip_ref.extractall(directory_to_extract_to)
+    
+    # build a list of text files
+    textfiles = [file for file in os.listdir(directory_to_extract_to) if file[-3:] == 'txt']
+    
+    # filter text files on those required
+    textfiles = [textfile for textfile in textfiles if textfile in TEXT_FILE_LIST]
+    
+    print(textfiles)
+    
+    def create_table(textfile):
+        tablename = textfile.split('/')[-1].split('.')[0]
+        con = sqlite3.connect(gtfs_db_file) # change to 'sqlite:///your_filename.db'
+        cur = con.cursor()
+    
+        with open(textfile,'r') as fin:
+            # csv.DictReader uses first line in file for column headings by default
+            dr = csv.DictReader(fin) # comma is default delimiter
+            to_db = []
+            for i,row in enumerate(dr):
+                column_list = [k for k in row.keys() if k in REQUIRED_COLUMNS.get(tablename)]
+                number_of_columns = len(column_list)
+                
+                if i == 0:
+                    column_commas = ','.join(column_list)
+                    create_table_statement = f"CREATE TABLE {tablename} ({column_commas});"
+                    try:
+                        cur.execute(create_table_statement)
+                    except sqlite3.OperationalError:
+                        cur.execute(f"DROP TABLE {tablename}")
+                        cur.execute(create_table_statement)
+                
+                rowtuple = tuple([v for k,v in row.items() if k in column_list])
+                to_db.append(rowtuple)
+
+        app.logger.debug(f"{column_list=}")
+        app.logger.debug(f"{rowtuple=}")
+        os.remove(textfile)
+        values_placeholders = ','.join(['?' for i in range(number_of_columns)])
+        insert_into_statement = f"INSERT INTO {tablename} ({column_commas}) VALUES ({values_placeholders});"
+        print(f"{insert_into_statement=}")
+        cur.executemany(insert_into_statement, to_db)
+        con.commit()
+        con.close()
+        
+     
+    for t in textfiles:
+        full_path = f"../metlink-app/static/{t}"
+        create_table(full_path)
+    
+    os.remove(path_to_zip_file)
+    
+    app.logger.info(os.stat(gtfs_db_file))
+
+    return 'OK'
+
 if __name__ == '__main__':
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app. This

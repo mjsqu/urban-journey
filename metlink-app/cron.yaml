@@ -1,0 +1,4 @@
+cron:
+- description: "Refresh GTFS Database"
+  url: /tasks/refresh_gtfs_db
+  schedule: every 24 hours
